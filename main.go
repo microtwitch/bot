@@ -12,13 +12,10 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-const RECEIVER_TARGET string = "127.0.0.1:9090"
-const EDGE_TARGET string = "127.0.0.1:8080"
-
 func main() {
 	config.Init()
 
-	lis, err := net.Listen("tcp", RECEIVER_TARGET)
+	lis, err := net.Listen("tcp", config.ReceiverTarget)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -33,14 +30,14 @@ func main() {
 
 	go grpcServer.Serve(lis)
 
-	client, err := newChatEdgeClient(EDGE_TARGET)
+	client, err := newChatEdgeClient(config.EdgeTarget)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	bot.client = client
 
-	err = bot.client.JoinChat(context.Background(), RECEIVER_TARGET)
+	err = bot.client.JoinChat(context.Background(), config.ReceiverTarget)
 	if err != nil {
 		log.Fatalln(err)
 	}
