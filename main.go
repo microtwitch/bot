@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 
+	"github.com/microtwitch/bot/config"
 	"github.com/microtwitch/chatedge/protos"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -15,6 +16,8 @@ const RECEIVER_TARGET string = "127.0.0.1:9090"
 const EDGE_TARGET string = "127.0.0.1:8080"
 
 func main() {
+	config.Init()
+
 	lis, err := net.Listen("tcp", RECEIVER_TARGET)
 	if err != nil {
 		log.Fatalln(err)
@@ -22,7 +25,7 @@ func main() {
 
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
-	server := NewServer()
+	server := NewServer(HandleMessage)
 
 	protos.RegisterEdgeReceiverServer(grpcServer, server)
 
@@ -33,7 +36,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = client.JoinChat(context.Background(), "tmiloadtesting2", RECEIVER_TARGET)
+	err = client.JoinChat(context.Background(), config.Channel, RECEIVER_TARGET)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -44,17 +47,23 @@ func main() {
 
 }
 
-type receiverServer struct {
-	protos.UnimplementedEdgeReceiverServer
+func HandleMessage(msg *protos.ChatMessage) {
+	log.Println(fmt.Sprintf("#%s %s: %s", msg.Channel, msg.User, msg.Message))
 }
 
-func NewServer() *receiverServer {
-	s := &receiverServer{}
+type receiverServer struct {
+	protos.UnimplementedEdgeReceiverServer
+
+	handleMsg func(*protos.ChatMessage)
+}
+
+func NewServer(handleMsg func(*protos.ChatMessage)) *receiverServer {
+	s := &receiverServer{handleMsg: handleMsg}
 	return s
 }
 
 func (s *receiverServer) Send(ctx context.Context, chatMessage *protos.ChatMessage) (*protos.Empty, error) {
-	log.Println(fmt.Sprintf("#%s %s: %s", chatMessage.Channel, chatMessage.User, chatMessage.Message))
+	s.handleMsg(chatMessage)
 	return &protos.Empty{}, nil
 }
 
