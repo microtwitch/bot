@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 
 	"github.com/microtwitch/chatedge/protos"
-	"github.com/microtwitch/chatedge/receiver/edge"
-	"github.com/microtwitch/chatedge/receiver/server"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const RECEIVER_TARGET string = "127.0.0.1:9090"
@@ -22,13 +22,13 @@ func main() {
 
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
-	server := server.NewServer()
+	server := NewServer()
 
 	protos.RegisterEdgeReceiverServer(grpcServer, server)
 
 	go grpcServer.Serve(lis)
 
-	client, err := edge.NewChatEdgeClient(EDGE_TARGET)
+	client, err := NewChatEdgeClient(EDGE_TARGET)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -42,4 +42,48 @@ func main() {
 		select {}
 	}
 
+}
+
+type receiverServer struct {
+	protos.UnimplementedEdgeReceiverServer
+}
+
+func NewServer() *receiverServer {
+	s := &receiverServer{}
+	return s
+}
+
+func (s *receiverServer) Send(ctx context.Context, chatMessage *protos.ChatMessage) (*protos.Empty, error) {
+	log.Println(fmt.Sprintf("#%s %s: %s", chatMessage.Channel, chatMessage.User, chatMessage.Message))
+	return &protos.Empty{}, nil
+}
+
+type ChatEdgeClient struct {
+	client protos.ChatEdgeClient
+}
+
+func NewChatEdgeClient(target string) (*ChatEdgeClient, error) {
+	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	conn, err := grpc.Dial(target, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	client := protos.NewChatEdgeClient(conn)
+
+	return &ChatEdgeClient{client}, nil
+}
+
+func (c *ChatEdgeClient) JoinChat(ctx context.Context, channel string, callback string) error {
+	joinRequest := protos.JoinRequest{Channel: channel, Callback: callback}
+	_, err := c.client.JoinChat(ctx, &joinRequest)
+	if err != nil {
+		return err
+	}
+
+	// TODO: do something with the id in resp
+
+	return nil
 }
