@@ -3,7 +3,7 @@ module github.com/microtwitch/bot
 go 1.20
 
 require (
-	github.com/microtwitch/chatedge v0.1.8
+	github.com/microtwitch/chatedge v0.1.9
 	google.golang.org/grpc v1.56.1
 )
 
