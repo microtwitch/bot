@@ -11,8 +11,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-const RECEIVER_TARGET string = "localhost:9090"
-const EDGE_TARGET string = "localhost:8080"
+const RECEIVER_TARGET string = "127.0.0.1:9090"
+const EDGE_TARGET string = "127.0.0.1:8080"
 
 func main() {
 	lis, err := net.Listen("tcp", RECEIVER_TARGET)
