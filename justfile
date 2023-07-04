@@ -1,7 +1,7 @@
 set dotenv-load
 
 run: 
-    go run main.go
+    go run cmd/bot/main.go
 
 compose:
     docker compose pull

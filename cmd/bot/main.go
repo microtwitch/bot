@@ -42,7 +42,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = bot.client.Send(context.Background(), "OpieOP bot ready!")
+	err = bot.client.Send(context.Background(), "VisLaud Bot ready!")
 	if err != nil {
 		log.Fatalln(err)
 	}
