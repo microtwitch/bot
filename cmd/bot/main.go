@@ -4,7 +4,10 @@ import (
 	"context"
 	"log"
 	"net"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/microtwitch/bot/config"
 	"github.com/microtwitch/chatedge/protos"
@@ -14,6 +17,9 @@ import (
 
 func main() {
 	config.Init()
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
 	lis, err := net.Listen("tcp", config.ReceiverTarget)
 	if err != nil {
@@ -47,10 +53,13 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	for {
-		select {}
+	<-sig
+	err = bot.client.Send(context.Background(), "FeelsBadMan Shutting down!")
+	if err != nil {
+		log.Fatalln(err)
 	}
 
+	os.Exit(0)
 }
 
 type Bot struct {
